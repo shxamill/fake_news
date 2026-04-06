@@ -29,60 +29,36 @@ if st.button("Check News"):
         
         text_vec = tfidf.transform([cleaned_input])
         prob = model.predict_proba(text_vec)[0]
-
         real_probability = prob[1]
-        fake_probability = prob[0]
-        
-        # Determine dynamic threshold
-        threshold = 0.5
-        word_count = len(user_input.split())
-        
-        if word_count < 20:
-            st.warning("⚠️ **Warning:** Your text is very short! This model is designed for full news articles. Fact-checking short sentences often results in inaccurate predictions.")
-            threshold = 0.30  # Lower the bar for real news on short texts
-            
-        if real_probability >= threshold:
-            display_conf = max(real_probability, 0.51) if word_count < 20 else real_probability
-            st.success(f"✅ This looks like REAL news (Confidence: {display_conf*100:.2f}%)")
-        else:
-            st.error(f"🚨 This looks like FAKE news (Confidence: {fake_probability*100:.2f}%)")
-            
-        st.info("💡 **Note on Model Bias:** This model was trained on a dataset where "
-                "real news articles heavily featured publisher tags like '(Reuters)'. "
-                "Because of this, it often assumes short or uncredited text is fake. "
-                "To test this bias, try adding *'WASHINGTON (Reuters) - '* to your text!")
 
-        # === NEW: INTERNET FACT CHECKING ===
+        import requests
         import urllib.parse
-        import wikipedia
-        import warnings
-        warnings.filterwarnings("ignore", category=UserWarning, module='wikipedia')
+
+        # General AI Internet Check
+        with st.spinner("🤖 AI is actively analyzing the internet for facts..."):
+            prompt = f"You are a strict fact-checking AI. Fact-check the following statement or news: '{user_input}'. Is it true or false? Start your response with exactly the word 'TRUE.', 'FALSE.', or 'UNVERIFIABLE.', followed by a clear, internet-backed explanation."
+            try:
+                url = "https://text.pollinations.ai/" + urllib.parse.quote(prompt)
+                ai_response = requests.get(url, timeout=20).text.strip()
+            except Exception:
+                ai_response = "ERROR"
 
         st.markdown("---")
-        st.subheader("🌐 Verify with Internet AI")
+        st.subheader("🌐 General AI Fact-Check Result")
         
-        google_url = f"https://www.google.com/search?q={urllib.parse.quote(user_input)}"
-        st.markdown(f"Can't trust the model? **[🔍 Search Google to verify: '{user_input}']({google_url})**")
-        
-        with st.spinner("Searching Wikipedia for relevant facts..."):
-            try:
-                search_results = wikipedia.search(user_input, results=1)
-                if search_results:
-                    page_title = search_results[0]
-                    # Fetch summary (skip disambiguation errors gracefully)
-                    summary = wikipedia.summary(page_title, sentences=3, auto_suggest=False)
-                    with st.expander(f"📖 Automatic Wikipedia Fact-Check: {page_title}", expanded=True):
-                        st.write(summary)
-                        st.caption(f"Source: Internet Wikipedia API - {page_title}")
-                else:
-                    st.info("No direct Wikipedia facts found. Use the Google Search link above!")
-            except wikipedia.exceptions.DisambiguationError as e:
-                # If ambiguous, try the first option
-                try:
-                    summary = wikipedia.summary(e.options[0], sentences=2, auto_suggest=False)
-                    with st.expander(f"📖 Automatic Wikipedia Fact-Check: {e.options[0]}", expanded=True):
-                        st.write(summary)
-                except:
-                    st.info("Topic too broad. Use the Google Search link above!")
-            except Exception as e:
-                st.info("Could not fetch Wikipedia article for this specific phrasing.")
+        if ai_response == "ERROR":
+            st.error("Failed to reach the AI fact-checking server. Falling back to old model.")
+        else:
+            if ai_response.upper().startswith("TRUE"):
+                st.success("✅ **REAL NEWS / TRUE FACT** (Verified by AI Agent)")
+            elif ai_response.upper().startswith("FALSE"):
+                st.error("🚨 **FAKE NEWS / FALSE FACT** (Verified by AI Agent)")
+            else:
+                st.warning("⚠️ **UNVERIFIABLE** (AI Agent couldn't find a definitive answer)")
+                
+            st.info(f"**AI Explanation:**\n\n{ai_response}")
+
+        st.markdown("---")
+        with st.expander("Legacy Political ML Model Score (For Comparison)", expanded=False):
+            st.write(f"The original ISOT-based political classifier scored this as: **{real_probability*100:.2f}% Real**")
+            st.caption("Note: The legacy ML model is not connected to the internet and only analyzes keywords, causing it to fail on general facts.")
