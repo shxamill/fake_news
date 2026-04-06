@@ -33,6 +33,7 @@ if st.button("Check News"):
 
         import requests
         import urllib.parse
+        from datetime import datetime
 
         # General AI Internet Check with LIVE WEB SCRAPING
         with st.spinner("🤖 AI is actively scraping the live internet (News & Wikipedia) for facts..."):
@@ -41,7 +42,7 @@ if st.button("Check News"):
             # 1. Try fetching live news via DuckDuckGo
             try:
                 from duckduckgo_search import DDGS
-                news_results = DDGS().news(user_input, max_results=3)
+                news_results = DDGS().news(user_input, max_results=5)
                 if news_results:
                     context += "Live News Articles:\n"
                     for res in news_results:
@@ -49,23 +50,30 @@ if st.button("Check News"):
             except Exception:
                 pass
                 
-            # 2. Try fetching Wikipedia for general knowledge
+            # 2. Try fetching Wikipedia for broader search context
             try:
                 import wikipedia
                 import warnings
                 warnings.filterwarnings("ignore", category=UserWarning, module='wikipedia')
+                
+                # Broaden the search by extracting larger keyword terms if exact search fails
                 search_results = wikipedia.search(user_input, results=2)
+                if not search_results:
+                    keywords = " ".join([w for w in user_input.split() if len(w) > 3])
+                    search_results = wikipedia.search(keywords, results=2)
+                    
                 if search_results:
                     for page_title in search_results:
                         try:
-                            summary = wikipedia.summary(page_title, sentences=2, auto_suggest=False)
+                            summary = wikipedia.summary(page_title, sentences=3, auto_suggest=False)
                             context += f"\nWikipedia ({page_title}): {summary}\n"
                         except Exception:
                             pass
             except Exception:
                 pass
 
-            prompt = f"You are a strict fact-checking AI. Fact-check the user's statement. Here is the latest up-to-date internet context we scraped for you:\n{context}\n\nUser statement: '{user_input}'. Is it true or false? Start your response with exactly the word 'TRUE.', 'FALSE.', or 'UNVERIFIABLE.', followed by a clear explanation based ONLY on the provided internet context or your own general knowledge if the context is empty."
+            current_date = datetime.now().strftime("%B %d, %Y")
+            prompt = f"Today is {current_date}. You are an advanced AI fact-checker connected to the live internet. Fact-check the user's statement. Here is the latest up-to-date internet context downloaded right now:\n{context}\n\nUser statement: '{user_input}'. Is it true or false? Start your response with exactly 'TRUE.', 'FALSE.', or 'UNVERIFIABLE.', followed by a clear explanation. IMPORTANT RULE: Never mention a 'knowledge cutoff', 'September 2023', or that you 'cannot search the internet', because you MUST act using the live internet context provided above to give the most up to date, 100% current answer."
             
             try:
                 url = "https://text.pollinations.ai/" + urllib.parse.quote(prompt)
