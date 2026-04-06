@@ -4,3 +4,4 @@ numpy
 pandas
 wikipedia
 requests
+duckduckgo-search
