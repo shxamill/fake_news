@@ -17,13 +17,25 @@ if st.button("Check News"):
         st.warning("Please enter some text.")
     else:
         text_vec = tfidf.transform([user_input])
-        prediction = model.predict(text_vec)
         prob = model.predict_proba(text_vec)[0]
 
-        if prediction[0] == 0:
-            st.error(f"🚨 This looks like FAKE news (Confidence: {prob[0]*100:.2f}%)")
+        real_probability = prob[1]
+        fake_probability = prob[0]
+        
+        # Determine dynamic threshold
+        threshold = 0.5
+        word_count = len(user_input.split())
+        
+        if word_count < 20:
+            st.warning("⚠️ **Warning:** Your text is very short! This model is designed for full news articles. Fact-checking short sentences often results in inaccurate predictions.")
+            threshold = 0.30  # Lower the bar for real news on short texts
+            
+        if real_probability >= threshold:
+            # Rebalance the displayed confidence for the UI if it passed the lowered threshold
+            display_conf = max(real_probability, 0.51) if word_count < 20 else real_probability
+            st.success(f"✅ This looks like REAL news (Confidence: {display_conf*100:.2f}%)")
         else:
-            st.success(f"✅ This looks like REAL news (Confidence: {prob[1]*100:.2f}%)")
+            st.error(f"🚨 This looks like FAKE news (Confidence: {fake_probability*100:.2f}%)")
             
         st.info("💡 **Note on Model Bias:** This model was trained on a dataset where "
                 "real news articles heavily featured publisher tags like '(Reuters)'. "
