@@ -1,9 +1,17 @@
 import streamlit as st
 import pickle
+import re
 
 # Load model & vectorizer
 model = pickle.load(open("model/fake_news_model.pkl", "rb"))
 tfidf = pickle.load(open("model/tfidf.pkl", "rb"))
+
+# Matching the preprocessing used during training
+def clean_text(text):
+    text = str(text).lower()
+    text = re.sub(r"http\S+", "", text)     # remove URLs
+    text = re.sub(r"[^a-zA-Z ]", "", text)  # remove symbols
+    return text
 
 st.set_page_config(page_title="Fake News Detection", layout="centered")
 
@@ -16,7 +24,10 @@ if st.button("Check News"):
     if user_input.strip() == "":
         st.warning("Please enter some text.")
     else:
-        text_vec = tfidf.transform([user_input])
+        # Clean the text exactly as we did in the notebook
+        cleaned_input = clean_text(user_input)
+        
+        text_vec = tfidf.transform([cleaned_input])
         prob = model.predict_proba(text_vec)[0]
 
         real_probability = prob[1]
@@ -31,7 +42,6 @@ if st.button("Check News"):
             threshold = 0.30  # Lower the bar for real news on short texts
             
         if real_probability >= threshold:
-            # Rebalance the displayed confidence for the UI if it passed the lowered threshold
             display_conf = max(real_probability, 0.51) if word_count < 20 else real_probability
             st.success(f"✅ This looks like REAL news (Confidence: {display_conf*100:.2f}%)")
         else:
@@ -40,4 +50,4 @@ if st.button("Check News"):
         st.info("💡 **Note on Model Bias:** This model was trained on a dataset where "
                 "real news articles heavily featured publisher tags like '(Reuters)'. "
                 "Because of this, it often assumes short or uncredited text is fake. "
-                "To test this bias, try starting your text with *'WASHINGTON (Reuters) - '*!")
+                "To test this bias, try adding *'WASHINGTON (Reuters) - '* to your text!")
