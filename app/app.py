@@ -51,3 +51,38 @@ if st.button("Check News"):
                 "real news articles heavily featured publisher tags like '(Reuters)'. "
                 "Because of this, it often assumes short or uncredited text is fake. "
                 "To test this bias, try adding *'WASHINGTON (Reuters) - '* to your text!")
+
+        # === NEW: INTERNET FACT CHECKING ===
+        import urllib.parse
+        import wikipedia
+        import warnings
+        warnings.filterwarnings("ignore", category=UserWarning, module='wikipedia')
+
+        st.markdown("---")
+        st.subheader("🌐 Verify with Internet AI")
+        
+        google_url = f"https://www.google.com/search?q={urllib.parse.quote(user_input)}"
+        st.markdown(f"Can't trust the model? **[🔍 Search Google to verify: '{user_input}']({google_url})**")
+        
+        with st.spinner("Searching Wikipedia for relevant facts..."):
+            try:
+                search_results = wikipedia.search(user_input, results=1)
+                if search_results:
+                    page_title = search_results[0]
+                    # Fetch summary (skip disambiguation errors gracefully)
+                    summary = wikipedia.summary(page_title, sentences=3, auto_suggest=False)
+                    with st.expander(f"📖 Automatic Wikipedia Fact-Check: {page_title}", expanded=True):
+                        st.write(summary)
+                        st.caption(f"Source: Internet Wikipedia API - {page_title}")
+                else:
+                    st.info("No direct Wikipedia facts found. Use the Google Search link above!")
+            except wikipedia.exceptions.DisambiguationError as e:
+                # If ambiguous, try the first option
+                try:
+                    summary = wikipedia.summary(e.options[0], sentences=2, auto_suggest=False)
+                    with st.expander(f"📖 Automatic Wikipedia Fact-Check: {e.options[0]}", expanded=True):
+                        st.write(summary)
+                except:
+                    st.info("Topic too broad. Use the Google Search link above!")
+            except Exception as e:
+                st.info("Could not fetch Wikipedia article for this specific phrasing.")
