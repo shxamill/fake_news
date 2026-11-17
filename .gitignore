@@ -1,2 +1,17 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db
