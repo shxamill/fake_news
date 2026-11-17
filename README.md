@@ -1,5 +1,7 @@
 # Fake News Detection System
 
+[![CI](https://github.com/shxamill/fake_news/actions/workflows/ci.yml/badge.svg)](https://github.com/shxamill/fake_news/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A Streamlit application that uses a trained text-classification model to estimate whether submitted news text resembles the examples labelled as fake or real during training. The app also attempts to retrieve related context from live news search and Wikipedia.
 
 ## Important limitation
@@ -86,4 +88,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CON
 
 ## License
 
-No repository-level open-source license is currently provided. Do not assume that public availability grants permission to reuse or redistribute the code, model, or data.
+This project is licensed under the [MIT License](LICENSE).
